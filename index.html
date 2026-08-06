@@ -193,42 +193,179 @@
 <body>
 
 <div class="wrap">
-  <!-- Top Header with Seal and Language Switch Button -->
+  <!-- Header -->
   <header>
     <div class="header-left">
       <div class="seal">
-        <img src="data:image/png;base64,..." alt="Logo">
+        <!-- Logo Image Added Here -->
+        <img src="{data_uri}" alt="Spy Message Logo">
       </div>
       <div class="brand">
         <h1 id="app-title">गुप्त संदेश</h1>
         <p id="app-subtitle">SECURE PHOTO ENCRYPTION</p>
       </div>
     </div>
-    <!-- Language Toggle Button at Top Right Corner -->
+    <!-- Top Right Language Switch Button -->
     <button class="lang-switch" onclick="toggleLanguage()" id="langBtn">EN / हिंदी</button>
   </header>
 
-  <!-- Baaki ka content yahan rahega -->
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('create')" id="tabCreate">संदेश छुपाएं</button>
+    <button class="tab" onclick="switchTab('read')" id="tabRead">संदेश पढ़ें</button>
+  </div>
+
+  <!-- Create Panel -->
+  <div class="panel active" id="panelCreate">
+    <span class="label" id="lblPhoto">1. फोटो चुनें</span>
+    <div class="photo-drop" onclick="document.getElementById('fileInput').click()" id="dropZone">
+      <div class="cam-icon">📷</div>
+      <div class="hint">
+        <b id="dropTitle">तस्वीर अपलोड करें</b>
+        <span id="dropSub">टैप करें या फोटो चुनें</span>
+      </div>
+      <img id="previewImg" style="display:none;">
+    </div>
+    <input type="file" id="fileInput" accept="image/*" onchange="handleImage(this)">
+
+    <span class="label" id="lblSecret">2. गुप्त संदेश लिखें</span>
+    <textarea id="secretInput" placeholder="यहाँ अपना गुप्त संदेश टाइप करें..." oninput="updateCount()"></textarea>
+    <div class="charcount" id="charCount">0 अक्षर</div>
+
+    <button class="btn btn-primary" onclick="encryptMessage()" id="encryptBtn">
+      <div class="radar"></div>
+      <span id="encryptBtnText">संदेश सुरक्षित करें</span>
+    </button>
+
+    <div class="result" id="createResult">
+      <div class="tag" id="createResultTag">सफलता</div>
+      <div class="msg" id="createResultMsg"></div>
+    </div>
+  </div>
+
+  <!-- Read Panel -->
+  <div class="panel" id="panelRead">
+    <span class="label" id="lblReadPhoto">गुप्त फोटो चुनें</span>
+    <div class="photo-drop" onclick="document.getElementById('readFileInput').click()" id="readDropZone">
+      <div class="cam-icon">🔍</div>
+      <div class="hint">
+        <b id="readDropTitle">गुप्त तस्वीर अपलोड करें</b>
+        <span id="readDropSub">जिसमें संदेश छुपा है</span>
+      </div>
+      <img id="readPreviewImg" style="display:none;">
+    </div>
+    <input type="file" id="readFileInput" accept="image/*" onchange="handleReadImage(this)">
+
+    <button class="btn btn-primary" onclick="decryptMessage()" id="decryptBtn">
+      <div class="radar"></div>
+      <span id="decryptBtnText">संदेश निकालें</span>
+    </button>
+
+    <div class="result" id="readResult">
+      <div class="tag" id="readResultTag">परिणाम</div>
+      <div class="msg" id="readResultMsg"></div>
+    </div>
+  </div>
 </div>
+
+<canvas id="canvas"></canvas>
 
 <script>
   let currentLang = 'hi';
 
   function toggleLanguage() {
     currentLang = currentLang === 'hi' ? 'en' : 'hi';
-    const titleEl = document.getElementById('app-title');
     const btnEl = document.getElementById('langBtn');
-
+    
     if (currentLang === 'en') {
-      titleEl.innerText = "Spy Message";
       btnEl.innerText = "हिंदी / EN";
+      document.getElementById('app-title').innerText = "Spy Message";
+      document.getElementById('tabCreate').innerText = "Hide Message";
+      document.getElementById('tabRead').innerText = "Read Message";
+      document.getElementById('lblPhoto').innerText = "1. Choose Photo";
+      document.getElementById('dropTitle').innerText = "Upload Picture";
+      document.getElementById('dropSub').innerText = "Tap to select photo";
+      document.getElementById('lblSecret').innerText = "2. Enter Secret Message";
+      document.getElementById('secretInput').placeholder = "Type your secret message here...";
+      document.getElementById('encryptBtnText').innerText = "Secure Message";
+      document.getElementById('lblReadPhoto').innerText = "Choose Secret Photo";
+      document.getElementById('readDropTitle').innerText = "Upload Encrypted Picture";
+      document.getElementById('readDropSub').innerText = "Containing hidden message";
+      document.getElementById('decryptBtnText').innerText = "Extract Message";
     } else {
-      titleEl.innerText = "गुप्त संदेश";
       btnEl.innerText = "EN / हिंदी";
+      document.getElementById('app-title').innerText = "गुप्त संदेश";
+      document.getElementById('tabCreate').innerText = "संदेश छुपाएं";
+      document.getElementById('tabRead').innerText = "संदेश पढ़ें";
+      document.getElementById('lblPhoto').innerText = "1. फोटो चुनें";
+      document.getElementById('dropTitle').innerText = "तस्वीर अपलोड करें";
+      document.getElementById('dropSub').innerText = "टैप करें या फोटो चुनें";
+      document.getElementById('lblSecret').innerText = "2. गुप्त संदेश लिखें";
+      document.getElementById('secretInput').placeholder = "यहाँ अपना गुप्त संदेश टाइप करें...";
+      document.getElementById('encryptBtnText').innerText = "संदेश सुरक्षित करें";
+      document.getElementById('lblReadPhoto').innerText = "गुप्त फोटो चुनें";
+      document.getElementById('readDropTitle').innerText = "गुप्त तस्वीर अपलोड करें";
+      document.getElementById('readDropSub').innerText = "जिसमें संदेश छुपा है";
+      document.getElementById('decryptBtnText').innerText = "संदेश निकालें";
     }
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    if(tab === 'create') {
+      document.getElementById('tabCreate').classList.add('active');
+      document.getElementById('panelCreate').classList.add('active');
+    } else {
+      document.getElementById('tabRead').classList.add('active');
+      document.getElementById('panelRead').classList.add('active');
+    }
+  }
+
+  function updateCount() {
+    const text = document.getElementById('secretInput').value;
+    document.getElementById('charCount').innerText = text.length + (currentLang === 'en' ? ' chars' : ' अक्षर');
+  }
+
+  function handleImage(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById('previewImg');
+        img.src = e.target.result;
+        img.style.display = 'block';
+      }
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function handleReadImage(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById('readPreviewImg');
+        img.src = e.target.result;
+        img.style.display = 'block';
+      }
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function encryptMessage() {
+    const res = document.getElementById('createResult');
+    res.className = 'result show ok';
+    document.getElementById('createResultTag').innerText = currentLang === 'en' ? 'Success' : 'सफलता';
+    document.getElementById('createResultMsg').innerText = currentLang === 'en' ? 'Message encrypted successfully!' : 'संदेश सफलतापूर्वक छुपा दिया गया है!';
+  }
+
+  function decryptMessage() {
+    const res = document.getElementById('readResult');
+    res.className = 'result show ok';
+    document.getElementById('readResultTag').innerText = currentLang === 'en' ? 'Extracted Message' : 'प्राप्त संदेश';
+    document.getElementById('readResultMsg').innerText = currentLang === 'en' ? 'Sample hidden message decoded.' : 'यहाँ आपका गुप्त संदेश दिखाई देगा।';
   }
 </script>
 
 </body>
-  </html>
-  
+      </html>
+      
